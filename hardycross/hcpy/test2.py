@@ -3,6 +3,10 @@ from Span import Span
 from Load import PointLoad, DistributedLoad
 from Structure import Structure
 
+#
+# Example from Baugh, Liu paper
+#
+
 A = FixedJoint('A')
 B = RollerJoint('B')
 C = RollerJoint('C')
@@ -15,4 +19,4 @@ BC.add_load(DistributedLoad(50))
 
 S = Structure(A, AB, B, BC, C)
 
-S.solve()
+S.solve(0.0001)

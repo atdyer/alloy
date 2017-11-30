@@ -29,33 +29,12 @@ class Span(DLLItem):
             return self
         return self._E
 
-    def add_load(self, load):
+    def I(self, *I):
 
-        load.set_span_length(self._length)
-        self._loads.append(load)
-
-    def calculate_carryover_factors(self):
-
-        if self.left() is None or self.right() is None:
-
-            raise AttributeError('Structure has not been correctly defined')
-
-        if isinstance(self.left(), RollerJoint) and isinstance(self.right(), FixedJoint):
-
-            self._COF_left = 0
-            self._COF_right = 0.5
-
-        if isinstance(self.right(), RollerJoint) and isinstance(self.left(), FixedJoint):
-
-            self._COF_left = 0.5
-            self._COF_right = 0
-
-    def carryover(self):
-
-        if self.left() is not None and self.right() is not None:
-
-            self.left().carryover_right(self.right().balance_left() * self._COF_left)
-            self.right().carryover_left(self.left().balance_right() * self._COF_right)
+        if len(I) > 0:
+            self._I = I[0]
+            return self
+        return self._I
 
     def length(self, *length):
 
@@ -77,3 +56,34 @@ class Span(DLLItem):
     def EIL(self):
 
         return self._E * self._I / self._length
+
+    def add_load(self, load):
+
+        load.set_span_length(self._length)
+        self._loads.append(load)
+        return self
+
+    def calculate_carryover_factors(self):
+
+        if self.left() is None or self.right() is None:
+
+            raise AttributeError('Structure has not been correctly defined')
+
+        if isinstance(self.left(), RollerJoint) and isinstance(self.right(), FixedJoint):
+
+            self._COF_left = 0
+            self._COF_right = 0.5
+
+        if isinstance(self.right(), RollerJoint) and isinstance(self.left(), FixedJoint):
+
+            self._COF_left = 0.5
+            self._COF_right = 0
+
+        return self
+
+    def carryover(self):
+
+        if self.left() is not None and self.right() is not None:
+
+            self.left().carryover_right(self.right().balance_left() * self._COF_left)
+            self.right().carryover_left(self.left().balance_right() * self._COF_right)

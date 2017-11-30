@@ -1,5 +1,3 @@
-
-# An item in a doubly-linked-list
 class DLLItem(object):
 
     def __init__(self):

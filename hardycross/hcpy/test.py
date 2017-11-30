@@ -3,6 +3,11 @@ from Span import Span
 from Load import PointLoad, DistributedLoad
 from Structure import Structure
 
+#
+# http://www.bgstructuralengineering.com/BGSMA/ContBeams/BGSMA_CB_0201.htm
+# Note that sign convention is flipped in this example
+#
+
 A = FixedJoint('A')
 B = RollerJoint('B')
 C = RollerJoint('C')
@@ -18,4 +23,4 @@ CD.add_load(DistributedLoad(1.5))
 
 S = Structure(A, AB, B, BC, C, CD, D)
 
-S.solve(0.001)
+S.solve(0.0001)

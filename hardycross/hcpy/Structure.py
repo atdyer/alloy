@@ -114,7 +114,7 @@ class Structure:
 
                 if i == 0:
 
-                    string += '{} {: 7.3f} {}'.format(
+                    string += '{} {: 8.3f} {}'.format(
                         item,
                         method_right(item),
                         ' '*spacing
@@ -122,14 +122,14 @@ class Structure:
 
                 elif i == len(self._items) - 1:
 
-                    string += '{: 7.3f} {}'.format(
+                    string += '{: 8.3f} {}'.format(
                         method_left(item),
                         item
                     )
 
                 else:
 
-                    string += '{: 7.3f} {} {: 7.3f} {}'.format(
+                    string += '{: 8.3f} {} {: 8.3f} {}'.format(
                         method_left(item),
                         item,
                         method_right(item),

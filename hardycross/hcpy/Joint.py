@@ -54,14 +54,6 @@ class Joint(DLLItem, ABC):
             return self
         return self._CO_right
 
-    def receive_from_right(self, moment):
-
-        self._moment_right += moment
-
-    def receive_from_left(self, moment):
-
-        self._moment_left += moment
-
     def moment(self):
 
         return self._moment_right + self._moment_left
@@ -95,6 +87,8 @@ class Joint(DLLItem, ABC):
 
                 self._moment_right += load.moment_left()
 
+        return self
+
     @abstractmethod
     def calculate_distribution_factors(self):
         pass
@@ -121,6 +115,8 @@ class FixedJoint(Joint):
         else:
             self._distribution_factor_right = 1
 
+        return self
+
     def calculate_fixed_end_moments(self):
 
         super().calculate_fixed_end_moments()
@@ -130,6 +126,8 @@ class FixedJoint(Joint):
 
         if self.right() is None:
             self._moment_right = -self._moment_left
+
+        return self
 
 class RollerJoint(Joint):
 
@@ -156,3 +154,5 @@ class RollerJoint(Joint):
             right = self.right().EIL()
             left = self.left().EIL() if self.left() is not None else 0
             self._distribution_factor_right = right / (left + right)
+
+        return self
