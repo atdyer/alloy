@@ -50,17 +50,12 @@ class Span(DLLItem):
             self._COF_left = 0.5
             self._COF_right = 0
 
-    def carry_left(self, moment):
+    def carryover(self):
 
-        if self.left() is not None:
+        if self.left() is not None and self.right() is not None:
 
-            self.left().receive_from_right(self._COF_left * moment)
-
-    def carry_right(self, moment):
-
-        if self.right() is not None:
-
-            self.right().receive_from_left(self._COF_right * moment)
+            self.left().carryover_right(self.right().balance_left() * self._COF_left)
+            self.right().carryover_left(self.left().balance_right() * self._COF_right)
 
     def length(self, *length):
 

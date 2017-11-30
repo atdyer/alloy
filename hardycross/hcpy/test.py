@@ -18,4 +18,4 @@ CD.add_load(DistributedLoad(1.5))
 
 S = Structure(A, AB, B, BC, C, CD, D)
 
-S.solve()
+S.solve(0.001)

@@ -47,7 +47,10 @@ class Structure:
 
         return 'Undefined structure'
 
-    def solve(self):
+    def solve(self, tolerance, print_table=True):
+
+        joints = [joint for joint in self._items if isinstance(joint, Joint)]
+        spans = [span for span in self._items if isinstance(span, Span)]
 
         # Initialize
         for item in self._items:
@@ -59,80 +62,78 @@ class Structure:
             elif isinstance(item, Span):
                 item.calculate_carryover_factors()
 
-        self.print_distribution_factors()
-        self.print_moments()
+        i = 0
 
         # Iterate
-        for i in range(10):
-            for item in self._items:
+        while abs(sum(map(Joint.moment, joints))) > tolerance:
 
-                if isinstance(item, Joint):
-                    item.balance(-item.moment())
+            i += 1
 
-            self.print_moments()
+            if print_table:
+                self.print_moments()
+
+            for joint in joints:
+                joint.balance()
+
+            if print_table:
+                self.print_balance()
+
+            for span in spans:
+                span.carryover()
+
+            if print_table:
+                self.print_carryovers()
+
+            for joint in joints:
+                joint.sum()
+
+        print()
+        print('Iterations: {}\tTolerance: {}'.format(i, tolerance))
+        self.print_moments()
 
     def print_moments(self):
 
-        string = ''
+        self.print_row('Moments', Joint, Joint.moment_left, Joint.moment_right)
+
+    def print_balance(self):
+
+        self.print_row('Balance', Joint, Joint.balance_left, Joint.balance_right)
+
+    def print_carryovers(self):
+
+        self.print_row('CO', Joint, Joint.carryover_left, Joint.carryover_right)
+
+    def print_row(self, name, T, method_left, method_right):
+
+        string = '{}\t\t'.format(name)
+        spacing = 5
 
         for i, item in enumerate(self._items):
 
-            if i % 2 == 0:
+            if isinstance(item, T):
 
                 if i == 0:
 
-                    string += '{} {: .3f}{}'.format(
+                    string += '{} {: 7.3f} {}'.format(
                         item,
-                        item._moment_right,
-                        ' '*5
+                        method_right(item),
+                        ' '*spacing
                     )
 
                 elif i == len(self._items) - 1:
 
-                    string += '{: .3f} {}'.format(
-                        item._moment_left,
+                    string += '{: 7.3f} {}'.format(
+                        method_left(item),
                         item
                     )
 
                 else:
 
-                    string += '{: .3f} {} {: .3f}     '.format(
-                        item._moment_left,
+                    string += '{: 7.3f} {} {: 7.3f} {}'.format(
+                        method_left(item),
                         item,
-                        item._moment_right
-                    )
-
-        print(string)
-
-    def print_distribution_factors(self):
-
-        string = ''
-
-        for i, item in enumerate(self._items):
-
-            if i % 2 == 0:
-
-                if i == 0:
-
-                    string += '{} {: .3f}{}'.format(
-                        item,
-                        item._distribution_factor_right,
-                        ' ' * 5
-                    )
-
-                elif i == len(self._items) - 1:
-
-                    string += '{: .3f} {}'.format(
-                        item._distribution_factor_left,
-                        item
-                    )
-
-                else:
-
-                    string += '{: .3f} {} {: .3f}     '.format(
-                        item._distribution_factor_left,
-                        item,
-                        item._distribution_factor_right
+                        method_right(item),
+                        ' '*spacing
                     )
 
         print(string)

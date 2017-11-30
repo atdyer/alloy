@@ -8,28 +8,51 @@ class Joint(DLLItem, ABC):
         super().__init__()
 
         self._name = name
-        self._moment_left = None
-        self._moment_right = None
         self._distribution_factor_left = None
         self._distribution_factor_right = None
+        self._moment_left = None
+        self._moment_right = None
+        self._balance_left = 0
+        self._balance_right = 0
+        self._CO_left = 0
+        self._CO_right = 0
 
     def __str__(self):
 
         return '{}'.format(self._name)
 
-    def balance(self, moment):
+    def balance(self):
 
-        left = self._distribution_factor_left * moment
-        right = self._distribution_factor_right * moment
+        moment = -self.moment()
+        self._balance_left = self._distribution_factor_left * moment
+        self._balance_right = self._distribution_factor_right * moment
 
-        self._moment_left += left
-        self._moment_right += right
+    def sum(self):
 
-        if self.left() is not None:
-            self.left().carry_left(left)
+        self._moment_left += self._balance_left + self._CO_left
+        self._moment_right += self._balance_right + self._CO_right
 
-        if self.right() is not None:
-            self.right().carry_right(right)
+    def balance_left(self):
+
+        return self._balance_left
+
+    def balance_right(self):
+
+        return self._balance_right
+
+    def carryover_left(self, *CO):
+
+        if len(CO) > 0:
+            self._CO_left = CO[0]
+            return self
+        return self._CO_left
+
+    def carryover_right(self, *CO):
+
+        if len(CO) > 0:
+            self._CO_right = CO[0]
+            return self
+        return self._CO_right
 
     def receive_from_right(self, moment):
 
@@ -42,6 +65,14 @@ class Joint(DLLItem, ABC):
     def moment(self):
 
         return self._moment_right + self._moment_left
+
+    def moment_left(self):
+
+        return self._moment_left
+
+    def moment_right(self):
+
+        return self._moment_right
 
     def name(self):
 
