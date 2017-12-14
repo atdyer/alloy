@@ -1,7 +1,7 @@
 module hc3	-- version 0.03
 
 open util/boolean
-open util/graph[Joint]
+open util/graph[Vertex]
 open util/ordering[State] as so	-- state ordering
 
 ----------- Signatures Section -----------
