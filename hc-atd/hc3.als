@@ -2,7 +2,7 @@ module hc3	-- version 0.03
 
 open util/boolean
 open util/graph[Vertex]
-open util/ordering[State] as so	-- state ordering
+open util/ordering[State]
 
 ----------- Signatures Section -----------
 -- A Vertex is abstract, and can be either a Joint or an End
@@ -11,7 +11,8 @@ open util/ordering[State] as so	-- state ordering
 sig State {}
 abstract sig Vertex {
 	balanced: Bool one -> State,	-- Indicates if left/right moments balance out to ~zero
-	carryable: Bool one -> State	-- Indicates if a moment value needs to be carried over
+	carryable: Bool one -> State,	-- Indicates if a moment value needs to be carried over
+	remaining: Int one -> State		-- The number of remaining iterations before convergence
 }
 sig Joint extends Vertex {}
 sig End extends Vertex {}
@@ -51,6 +52,14 @@ fact {
 	all s: Structure | all e: End | e -> (End-e) in ^(s.span)
 }
 
+----------- Iterations and Convergence -----------
+
+-- All vertices will take some number of (or no) iterations to converge
+fact {
+	all s: State | all v: Vertex | gte[s[v.remaining], 0]
+	--all v: Vertex | gt[v<:remaining, 0]
+}
+
 ----------- Helper Function Section -----------
 
 fun neighbors (v: Vertex): set Vertex {
@@ -70,7 +79,13 @@ pred init (s: State) {
 pred unchanged (vs: set Vertex, s, s': State) {
 	all v: vs | 
 		s[v.balanced] = s'[v.balanced] and
-		s[v.carryable] = s'[v.carryable]
+		s[v.carryable] = s'[v.carryable] and
+		unchangedIterations[vs, s, s']
+}
+
+pred unchangedIterations (vs: set Vertex, s, s': State) {
+	all v: vs |
+		eq[s[v.remaining], s'[v.remaining]]
 }
 
 -- Balance a single vertex
@@ -79,6 +94,7 @@ pred balance (v: Vertex, s, s': State) {
 	s[v.carryable]  = False
 	s'[v.balanced]  = True
 	s'[v.carryable] = True
+	eq[s'[v.remaining], sub[s[v.remaining], 1]]
 	unchanged[Vertex - v, s, s']
 }
 
@@ -97,13 +113,19 @@ pred carryover (v: Vertex, s, s': State) {
 		--   not cause a neighboring vertex to become unbalanced.
 		--   In in implementation, this occurs when the solution
 		--   has converged.
-		s[n.balanced] = False implies s'[n.balanced] = False
+		-- s[n.balanced] = False implies s'[n.balanced] = False
 		--   This statement, which requires that carryover always
 		--   makes a neighboring vertex become unbalanced, will
 		--   never produce a viable instance
 		-- s'[n.balanced] = False
+		--   This statement is meant to represent a more concrete
+		--   example of convergence. If the neighboring vertex is
+		--   balanced but still has remaining iterations, the carryover
+		--   will cause it to become unbalanced.
+		s[n.balanced] = True and gt[s[n.remaining], 0] implies s'[n.balanced] = False
 	}
 	unchanged[Vertex - v - neighbors[v], s, s']
+	unchangedIterations[Vertex, s, s']
 }
 
 -- Advance a single timestep, changing state by either
@@ -118,22 +140,20 @@ pred timestep (s, s': State) {
 
 pred show {
 	-- Initialize all vertices as not balanced
-	init[so/first]
+	init[first]
 
 	-- In each intermediate timestep,  
-	all s: State - so/last | 
+	all s: State - last | 
 		timestep[s, s.next]
 
 	-- The final timestep must have all vertices balanced
 	-- with no values left to carry over
 	all v: Vertex | 
-		v.balanced.so/last = True and 
-		v.carryable.so/last = False
+		v.balanced.last = True and 
+		v.carryable.last = False and
+		eq[v.remaining.last, 0]
 }
 
--- Minimum n=7 to find instance
-run show for 7
+-- Minimum n=3 to find instance
+run show for 3
 
--- Interesting case where vertex becomes unbalanced
--- and still needs to carry over
--- run show for 11 but 3 Vertex
