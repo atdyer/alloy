@@ -1,12 +1,5 @@
 module hc5	-- version 0.05
 
-/*
-All actions must be defined for all vertices. This means not only
-things that a vertex can do to itself (i.e. balancing and creating
-carryover moments), but also all possible actions that have an
-effect on all neighbors. This includes stuttering. 
-*/
-
 open util/boolean
 open util/ordering[State] as so		-- state ordering
 open util/ordering[Moment] as mo	-- moment ordering
@@ -126,7 +119,7 @@ pred timestep(s, s': State) {
 
 pred show {
 	-- Leave out the case where there is no structure
-	#Vertex =2
+	#Vertex = 3
 
 	-- Initialize all vertices
 	init[so/first]
