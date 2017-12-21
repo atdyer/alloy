@@ -1,20 +1,22 @@
-module hc6
+module hc7
 
 open util/boolean
 open util/ordering[State] as so
+open util/ordering[Moment] as mo
 
 sig State {}
+sig Moment {}
 abstract sig Vertex {
 	left: lone Vertex,
 	right: lone Vertex,
-	zl: Bool one -> State,	-- left moment zeroed out
-	zr: Bool one -> State,	-- right moment zeroed out
-	cl: Bool one -> State,	-- has value to carry left
-	cr: Bool one -> State	-- has value to carry right
+	carryL: Bool one -> State,
+	carryR: Bool one -> State,
+	momentL: Moment one -> State,
+	momentR: Moment one -> State
 }
+
 sig Joint extends Vertex {}
 sig End extends Vertex {}
-
 
 ----------- Connectivity Section -----------
 
@@ -43,81 +45,72 @@ fact {
 
 pred init (s: State) {
 	all v: Vertex |
-		s[v.cl] = False and
-		s[v.cr] = False and
-		s[v.zl] = False and
-		s[v.zr] = False
+		s[v.carryL] = False and
+		s[v.carryR] = False and
+		s[v.momentL] != mo/first and
+		s[v.momentR] != mo/first
 }
 
 pred stutter (v: Vertex, s, s': State) {
-	-- All subfields must remain identical between states during a stutter.
 	all f: Vertex$.subfields |
 		s[v.(f.value)] = s'[v.(f.value)]
 }
 
 pred balance (v: Vertex, s, s': State) {
-	-- During a balance operation, we enfore that neither sending
-	-- or receiving can also occur.
-	s'[v.zl] = True
-	s'[v.zr] = True
-	v.left != none implies s'[v.cl] = True else s'[v.cl] = s[v.cl]
-	v.right != none implies s'[v.cr] = True else s'[v.cr] = s[v.cr]
+	s'[v.momentL] = mo/first
+	s'[v.momentR] = mo/first
+	v.left != none implies s'[v.carryL] = True else s'[v.carryL] = s[v.carryL]
+	v.right != none implies s'[v.carryR] = True else s'[v.carryR] = s[v.carryR]
 }
 
 pred sendLeft (v: Vertex, s, s': State) {
 	v.left != none
-	s[v.cl] = True
-	s'[v.cl] = False
+	s[v.carryL] = True
+	s'[v.carryL] = False
 	-- COMMENT OUT TO ALLOW FOR CONVERGENCE
-	--s'[v.left.zr] = False
+	--s'[v.left.momentR] = s[v.left.momentR].next
 }
 
 pred sendRight (v: Vertex, s, s': State) {
 	v.right != none
-	s[v.cr] = True
-	s'[v.cr] = False
+	s[v.carryR] = True
+	s'[v.carryR] = False
 	-- COMMENT OUT TO ALLOW FOR CONVERGENCE
-	--s'[v.right.zl] = False
+	--s'[v.right.momentL] = s[v.right.momentL].next
 }
 
 pred send (v: Vertex, s, s': State) {
-	-- During a send operation, we enforce that a receive operation
-	-- cannot also occur. We can either send to the left, to the right,
-	-- or to both.
-	s'[v.zl] = s[v.zl]
-	s'[v.zr] = s[v.zr]
+	s'[v.momentL] = s[v.momentL]
+	s'[v.momentR] = s[v.momentR]
 	(
-		(sendLeft[v, s, s'] and s'[v.cr] = s[v.cr]) or
-		(sendRight[v, s, s'] and s'[v.cl] = s[v.cl]) or
+		(sendLeft[v, s, s'] and s'[v.carryR] = s[v.carryR]) or
+		(sendRight[v, s, s'] and s'[v.carryL] = s[v.carryL]) or
 		(sendLeft[v, s, s'] and sendRight[v, s, s'])
 	)
 }
 
 pred receiveFromLeft (v: Vertex, s, s': State) {
 	v.left != none
-	s[v.left.cr] = True
-	s'[v.left.cr] = False
-	-- COMMENT OUT TO ALLOW FOR CONVERGENCE:
-	--s'[v.zr] = False
+	s[v.left.carryR] = True
+	s'[v.left.carryR] = False
+	-- COMMENT OUT TO ALLOW FOR CONVERGENCE
+	--s'[v.momentR] = s[v.momentR].next
 }
 
 pred receiveFromRight (v: Vertex, s, s': State) {
 	v.right != none
-	s[v.right.cl] = True
-	s'[v.right.cl] = False
+	s[v.right.carryL] = True
+	s'[v.right.carryL] = True
 	-- COMMENT OUT TO ALLOW FOR CONVERGENCE
-	--s'[v.zl] = False
+	--s'[v.momentL] = s[v.momentL].next
 }
 
 pred receive (v: Vertex, s, s': State) {
-	-- During a receive operation, we enforce that a send operation
-	-- cannot also occur. We can either receive from the left, from
-	-- the right, or from both.
-	s'[v.cl] = s[v.cl]
-	s'[v.cr] = s[v.cr]
+	s'[v.carryL] = s[v.carryL]
+	s'[v.carryR] = s[v.carryR]
 	(
-		(receiveFromLeft[v, s, s'] and s'[v.zr] = s[v.zr]) or
-		(receiveFromRight[v, s, s'] and s'[v.zl] = s[v.zl]) or
+		(receiveFromLeft[v, s, s'] and s'[v.momentR] = s[v.momentR]) or
+		(receiveFromRight[v, s, s'] and s'[v.momentL] = s[v.momentL]) or
 		(receiveFromLeft[v, s, s'] and receiveFromRight[v, s, s'])
 	)
 }
@@ -144,10 +137,10 @@ pred show {
 		timestep[s, s.next]
 
 	all v: Vertex |
-		v.zl.last = True and
-		v.zr.last = True and
-		v.cl.last = False and
-		v.cr.last = False
+		v.momentL.last = mo/first and
+		v.momentR.last = mo/first and
+		v.carryL.last = False and
+		v.carryR.last = False
 
 }
 
